@@ -1,7 +1,7 @@
 require('./scripts/init')
 const { writeFileSync, write } = require('node:fs')
 const { get } = require('axios')
-const { param, getnamedParameter } = require('./scripts/param')
+const { param, getNamedParameter } = require('./scripts/param')
 const metadata = require('../metadata.json');
 const { logger } = require('./scripts/logger');
 const results = require('../results.json')
@@ -76,4 +76,39 @@ if (param === 'fetch') {
     }
 
     main()
+}
+if (param === 'search') {
+    const name = getNamedParameter('name');
+    /**
+     * @type {{ nom: string; prenoms: string; resultat: string; homonyme: boolean; }[]}
+     */
+    const matches = results.filter((result) => result.nom.toLowerCase().includes(name.toLowerCase()) || name.toLowerCase().includes(result.nom.toLowerCase()) || result.prenoms.toLowerCase().includes(name.toLowerCase()) || name.toLowerCase().includes(result.prenoms.toLowerCase()));
+
+    if (!matches.length) {
+        logger('neutral', 'Search Result', `No results found for ${colorate(name, 33)}.`);
+        return;
+    }
+
+    const headers = ['nom', 'prénoms', 'résultat']
+    const maxLengthName = Math.max(...matches.concat([{ nom: headers[0] }]).map((match) => match.nom.length));
+    const maxLengthPrenoms = Math.max(...matches.concat([{ prenoms: headers[1] }]).map((match) => match.prenoms.length));
+    const maxLengthResult = Math.max(...matches.concat([{ resultat: headers[2] }]).map((match) => match.resultat.length));
+
+    const lengthNameTitle = maxLengthName + 2;
+    const lengthPrenomsTitle = maxLengthPrenoms + 2;
+    const lengthResultTitle = maxLengthResult + 2;
+
+    const header = `╔${'═'.repeat(lengthNameTitle)}╦${'═'.repeat(lengthPrenomsTitle)}╦${'═'.repeat(lengthResultTitle)}╗`;
+    const separator = `╠${'═'.repeat(lengthNameTitle)}╬${'═'.repeat(lengthPrenomsTitle)}╬${'═'.repeat(lengthResultTitle)}╣`;
+    const footer = header.replace('╔', '╚').replace('╗', '╝').replace(/╦/g, '╩');
+
+    const content = matches.map(m => `║ ${m.nom.padEnd(maxLengthName)} ║ ${m.prenoms.padEnd(maxLengthPrenoms)} ║ ${m.resultat.padEnd(maxLengthResult)} ║`).join('\n');
+
+    console.log(
+        header + '\n' +
+        `║ ${headers[0].padEnd(maxLengthName)} ║ ${headers[1].padEnd(maxLengthPrenoms)} ║ ${headers[2].padEnd(maxLengthResult)} ║\n` +
+        separator + '\n' +
+        content + '\n' +
+        footer
+    );
 }
