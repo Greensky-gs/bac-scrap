@@ -30,7 +30,7 @@ if (param === 'fetch') {
             const res = await get(nameUrl).catch(() => {});
 
             if (!res || res?.status !== 200) {
-                logger('unexpected', 'Fetch Error', `Failed to fetch ${colorate(name, 33)}: ${res.status}. Writing`);
+                logger('unexpected', 'Fetch Error', `Failed to fetch ${colorate(name, 33)}: ${res?.status ?? 'nothing'}. Writing`);
 
                 metadata.errors.push(name);
                 writeFileSync('./metadata.json', JSON.stringify(metadata));
