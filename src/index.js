@@ -42,8 +42,8 @@ if (param === 'fetch') {
              * @type {{ nom: string; prenoms: string; resultat: string; homonyme: boolean; }[]}
              */
             const resultat = res.data.results 
-            if (!resultat) return logger('neutral', 'Fetch Result', `No result found for ${colorate(name, 33)}. Skipping.`);
-            logger('expected', 'Fetch Success', `Fetched ${colorate(name, 33)} successfully. Result: ${resultat.resultat}`);
+            if (!resultat || !resultat.length) return logger('neutral', 'Fetch Result', `No result found for ${colorate(name, 33)}. Skipping.`);
+            logger('expected', 'Fetch Success', `Fetched ${colorate(name, 33)} successfully. Result: ${resultat.length} results.`);
 
             results.push(...resultat)
         }
