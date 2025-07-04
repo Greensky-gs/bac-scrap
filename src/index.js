@@ -29,7 +29,7 @@ if (param === 'fetch') {
             const nameUrl = url(name);
             const res = await get(nameUrl).catch(() => {});
 
-            if (res.status !== 200) {
+            if (!res || res?.status !== 200) {
                 logger('unexpected', 'Fetch Error', `Failed to fetch ${colorate(name, 33)}: ${res.status}. Writing`);
 
                 metadata.errors.push(name);
@@ -37,11 +37,15 @@ if (param === 'fetch') {
                 return
             }
 
-            const resultat = res.data.results[0] // { nom: string; prenoms: string; resultat: string; homonyme: boolean; }
+            
+            /**
+             * @type {{ nom: string; prenoms: string; resultat: string; homonyme: boolean; }[]}
+             */
+            const resultat = res.data.results 
             if (!resultat) return logger('neutral', 'Fetch Result', `No result found for ${colorate(name, 33)}. Skipping.`);
             logger('expected', 'Fetch Success', `Fetched ${colorate(name, 33)} successfully. Result: ${resultat.resultat}`);
 
-            results.push(resultat)
+            results.push(...resultat)
         }
 
     
