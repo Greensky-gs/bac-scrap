@@ -2,3 +2,7 @@ node_modules/
 metadata.json
 results.json
 .vscode/
+data/
+# Added by cargo
+
+/target
