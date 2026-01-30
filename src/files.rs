@@ -129,7 +129,6 @@ impl Metadata {
         }
     }
     fn wait(&mut self, min: u16, max: u16) {
-        return;
         let val = self.rng.random_range(min..max);
         println!("Waiting \x1b[90m{}ms\x1b[0m", val);
         wait(val);
@@ -178,11 +177,16 @@ impl Metadata {
                 println!("Finished letter \x1b[91m{}\x1b[0m. Saving and going next...", (97 + self.indexes[0] - 1) as char);
 
                 self.save_errors();
-                self.save_errors();
+                self.save_results();
                 self.save_indexes();
 
                 self.wait(1500, 2000);
            }
         }
+
+        self.save_errors();
+        self.save_results();
+        self.save_indexes();
+        println!("\x1b[32mSuccesfully fetched \x1b[93m{}\x1b[32mresults\x1b[0m", self.results.len());
     }
 }
