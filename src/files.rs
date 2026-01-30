@@ -22,6 +22,12 @@ pub struct Metadata {
     pub ind_path_str: String
 }
 
+impl Resultat {
+    pub fn display(&self) {
+        println!("{{\n    nom: \x1b[91m{}\x1b[0m\n    prenom: \x1b[91m{}\x1b[0m\n    resultat: \x1b[91m{}\x1b[0m\n    homonyme: \x1b[91m{:?}\x1b[0m}}", self.nom, self.prenoms, self.resultat, self.homonyme);
+    }
+}
+
 impl Metadata {
     pub fn new(errors_path_str: &String, res_path_str: &String, ind_path_str: &String) -> Metadata {
         let errs_path = Path::new(errors_path_str);
@@ -189,4 +195,26 @@ impl Metadata {
         self.save_indexes();
         println!("\x1b[32mSuccesfully fetched \x1b[93m{}\x1b[32mresults\x1b[0m", self.results.len());
     }
+
+    pub fn filter(&self, input: FilterInput) -> Vec<&Resultat> {
+        return self.results
+            .iter()
+            .filter(|x| filter_callback(x, &input))
+            .collect()
+    }
+}
+
+fn filter_callback(res: &Resultat, input: &FilterInput) -> bool {
+    if let Some(name) = &input.nom {
+        if !res.nom.to_lowercase().contains(&name.to_lowercase()) {
+            return false;
+        }
+    }
+    return true;
+}
+
+struct FilterInput {
+    nom: Option<String>,
+    prenom: Option<String>,
+    admis: Option<bool>
 }
