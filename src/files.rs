@@ -24,7 +24,7 @@ pub struct Metadata {
 
 impl Resultat {
     pub fn display(&self) {
-        println!("{{\n    nom: \x1b[91m{}\x1b[0m\n    prenom: \x1b[91m{}\x1b[0m\n    resultat: \x1b[91m{}\x1b[0m\n    homonyme: \x1b[91m{:?}\x1b[0m}}", self.nom, self.prenoms, self.resultat, self.homonyme);
+        println!("{{\n    nom: \x1b[94m{}\x1b[0m\n    prenom: \x1b[94m{}\x1b[0m\n    resultat: \x1b[94m{}\x1b[0m\n    homonyme: \x1b[94m{:?}\x1b[0m\n}}", self.nom, self.prenoms, self.resultat, self.homonyme);
     }
 }
 
@@ -87,6 +87,8 @@ impl Metadata {
         for res in results {
             self.results.push(res);
         }
+
+        println!("Loaded \x1b[91m{}\x1b[0m results", self.results.len());
     }
     pub fn load_indexes(&mut self) {
         if !self.ind_path.exists() {
@@ -111,7 +113,7 @@ impl Metadata {
     pub fn save_indexes(&self) {
         let _ = fs::write(&self.ind_path, self.indexes.map(|x| x.to_string()).join(",")).expect("Cannot write to file");
     }
-    fn handle_name(&mut self, name: &String) {
+    fn handle_name(&mut self, name: &String, saves: bool) {
         println!("Fetching \x1b[91m{}\x1b[0m", name);
 
         let url = get_url_for(name);
@@ -120,7 +122,9 @@ impl Metadata {
         match response {
             None => {
                 println!("\x1b[31mFAILED\x1b[0m to fetch \x1b[91m{}\x1b[0m", name);
-                self.errors.push(name.to_string());
+                if saves {
+                    self.errors.push(name.to_string());
+                }
 
                 println!("\x1b[33mSecurity waiting\x1b[0m of \x1b[93m3000ms\x1b[0m...");
                 self.wait(3000, 3001);
@@ -134,6 +138,11 @@ impl Metadata {
             }
         }
     }
+    pub fn fetch_input(&mut self, input: &String) {
+        self.handle_name(input, false);
+        self.save_results();
+    }
+
     fn wait(&mut self, min: u16, max: u16) {
         let val = self.rng.random_range(min..max);
         println!("Waiting \x1b[90m{}ms\x1b[0m", val);
@@ -144,7 +153,7 @@ impl Metadata {
             if self.errors.len() > 0 && self.indexes[0] > LETTERS {
                 let name = self.errors.pop().unwrap();
 
-                self.handle_name(&name);
+                self.handle_name(&name, true);
                 
                 self.save_errors();
                 self.save_results();
@@ -156,14 +165,14 @@ impl Metadata {
                 while self.indexes[1] <= LETTERS {
                     let name = format!("{}{}", (self.indexes[0] + 97) as char, (97 + self.indexes[1]) as char);
 
-                    self.handle_name(&name);
+                    self.handle_name(&name, true);
 
                     self.wait(2, 10);
                     while self.indexes[2] <= LETTERS {
                         while self.indexes[3] <= LETTERS {
                             let name: String = vec![0,1,2,3].iter().map(|x| (97 + self.indexes[*x as usize]) as char).collect();
 
-                            self.handle_name(&name);
+                            self.handle_name(&name, true);
 
                             self.indexes[3] += 1;
                             self.wait(2, 10);
@@ -206,15 +215,41 @@ impl Metadata {
 
 fn filter_callback(res: &Resultat, input: &FilterInput) -> bool {
     if let Some(name) = &input.nom {
-        if !res.nom.to_lowercase().contains(&name.to_lowercase()) {
+        if !input.exact_name.is_none() && input.exact_name.unwrap() {
+            if res.nom.to_lowercase() != name.to_lowercase() {
+                return false;
+            }
+        } else {
+            if !res.nom.to_lowercase().contains(&name.to_lowercase()) {
+                return false;
+            }
+        }
+        
+    }
+    if let Some(prenom) = &input.prenom {
+        if !input.exact_prenom.is_none() && input.exact_prenom.unwrap() {
+            if res.prenoms.split(" ").map(|x| x.to_string()).collect::<Vec<String>>().get(0).unwrap().to_lowercase() != prenom.to_lowercase() {
+                return false;
+            }
+        } else {
+            if !res.prenoms.to_lowercase().contains(&prenom.to_lowercase()) {
+                return false
+            }
+        }
+    }
+    if let Some(admis) = &input.admis {
+        if res.resultat.contains(&"Admis") != *admis {
             return false;
         }
     }
     return true;
 }
 
-struct FilterInput {
-    nom: Option<String>,
-    prenom: Option<String>,
-    admis: Option<bool>
+#[derive(Debug)]
+pub struct FilterInput {
+    pub nom: Option<String>,
+    pub prenom: Option<String>,
+    pub admis: Option<bool>,
+    pub exact_name: Option<bool>,
+    pub exact_prenom: Option<bool>
 }
